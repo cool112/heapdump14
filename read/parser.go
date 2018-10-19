@@ -96,7 +96,7 @@ type Dump struct {
 	PtrSize      uint64 // in bytes
 	HeapStart    uint64
 	HeapEnd      uint64
-	TheChar      byte
+	TheChar      byte//change remove
 	Experiment   string
 	Ncpu         uint64
 	Types        []*Type
@@ -114,6 +114,7 @@ type Dump struct {
 	Panics       []*Panic
 	MemProf      []*MemProfEntry
 	AllocSamples []*AllocSample
+	Arch string //change add
 
 	// handle to dump file
 	r io.ReaderAt
@@ -352,7 +353,7 @@ type AllocSample struct {
 
 type Data struct {
 	Addr   uint64
-	Data   []byte
+	Data   []byte //change []byte->string
 	Fields []Field
 	Edges  []Edge
 }
@@ -396,7 +397,7 @@ type StackFrame struct {
 	Parent    *StackFrame
 	Goroutine *GoRoutine
 	Depth     uint64
-	Data      []byte
+	Data      []byte//change []byte->string
 	Edges     []Edge
 
 	Addr      uint64
@@ -516,7 +517,8 @@ func rawRead(filename string) *Dump {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if prefix || (string(hdr) != "go1.4 heap dump" && string(hdr) != "go1.5 heap dump" && string(hdr) != "go1.6 heap dump") {
+	log.Printf("%s %v",string(hdr) , prefix)
+	if prefix || (string(hdr) != "go1.4 heap dump" && string(hdr) != "go1.5 heap dump" && string(hdr) != "go1.6 heap dump" && string(hdr) != "go1.7 heap dump") {
 		log.Fatal("not a go1.[456] heap dump file")
 	}
 
@@ -620,7 +622,7 @@ func rawRead(filename string) *Dump {
 			t.Addr = readUint64(r)
 			t.Depth = readUint64(r)
 			t.childaddr = readUint64(r)
-			t.Data = readBytes(r)
+			t.Data = []byte(readString(r))
 			t.entry = readUint64(r)
 			t.pc = readUint64(r)
 			readUint64(r) // continpc
@@ -651,7 +653,7 @@ func rawRead(filename string) *Dump {
 			}
 			d.Frames = append(d.Frames, t)
 		case tagParams:
-			if readUint64(r) == 0 {
+			if readBool(r){//change uint64->bool
 				d.Order = binary.LittleEndian
 			} else {
 				d.Order = binary.BigEndian
@@ -659,7 +661,7 @@ func rawRead(filename string) *Dump {
 			d.PtrSize = readUint64(r)
 			d.HeapStart = readUint64(r)
 			d.HeapEnd = readUint64(r)
-			d.TheChar = byte(readUint64(r))
+			d.Arch = readString(r)
 			d.Experiment = readString(r)
 			d.Ncpu = readUint64(r)
 		case tagFinalizer:
@@ -681,13 +683,13 @@ func rawRead(filename string) *Dump {
 		case tagData:
 			t := &Data{}
 			t.Addr = readUint64(r)
-			t.Data = readBytes(r)
+			t.Data = []byte(readString(r))
 			t.Fields = readFields(r)
 			d.Data = t
 		case tagBss:
 			t := &Data{}
 			t.Addr = readUint64(r)
-			t.Data = readBytes(r)
+			t.Data = []byte(readString(r))
 			t.Fields = readFields(r)
 			d.Bss = t
 		case tagItab:
