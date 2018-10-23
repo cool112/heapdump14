@@ -1,7 +1,7 @@
 heapdump14
 ==========
 
-Heap dump reader &amp; visualizer for Go 1.4
+Heap dump reader &amp; visualizer for Go 1.4/1.5/1.6/1.7
 
 You call debug.WriteHeapDump(fd uintptr) to write a heap dump to the given
 file descriptor from within your Go program (that's runtime/debug).
